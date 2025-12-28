@@ -1,0 +1,12 @@
+{
+  "name": "smith/wc-appsheet-sync",
+  "type": "wordpress-plugin",
+  "require": {
+    "guzzlehttp/guzzle": "^7.8"
+  },
+  "autoload": {
+    "psr-4": {
+      "WcAppSheet\\": "src/"
+    }
+  }
+}
