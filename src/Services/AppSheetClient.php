@@ -8,11 +8,15 @@ use GuzzleHttp\Exception\RequestException;
 class AppSheetClient 
 {
     protected Client $cliente;
+    protected string $accessKey;
+    protected string $appId;
 
     public function __construct()
     {
+        $this->accessKey = get_option('wc_appsheet_access_key', '');
+        $this->appId = get_option('wc_appsheet_app_id', '');
         $this->cliente = new Client([
-            'base_uri' => 'https://api.appsheet.com/api/v2/apps/9108d0fb-e52e-4c24-964a-fafd72d15ef0/',
+            'base_uri' => 'https://api.appsheet.com/api/v2/apps/' . $this->appId . '/',
             'timeout'  => 10,
         ]);
     }
@@ -21,7 +25,7 @@ class AppSheetClient
     {
         return $this->cliente->post('tables/Orders/Action', [
             'headers' => [
-                'ApplicationAccessKey' => 'V2-sD0oB-7ESd4-PR2Ym-zKrhW-ZhSJc-TP7rH-FSkfO-w0eey',
+                'ApplicationAccessKey' => $this->accessKey,
                 'Content-Type' => 'application/json',
             ],
             'json' => [
