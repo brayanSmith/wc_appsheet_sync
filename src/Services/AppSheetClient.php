@@ -21,9 +21,9 @@ class AppSheetClient
         ]);
     }
 
-    public function sendOrder(array $data)
+    public function sendOrder(array $data, string $table = 'Orders')
     {
-        return $this->cliente->post('tables/Orders/Action', [
+        return $this->cliente->post("tables/{$table}/Action", [
             'headers' => [
                 'ApplicationAccessKey' => $this->accessKey,
                 'Content-Type' => 'application/json',
