@@ -23,9 +23,9 @@ class SettingsPage
 
     public function registerSettings()
     {
-        register_setting('wc_appsheet_sync_group', option_name: 'wc_appsheet_app_id');
+        register_setting('wc_appsheet_sync_group', 'wc_appsheet_app_id');
         register_setting('wc_appsheet_sync_group', 'wc_appsheet_access_key');
-        // register_setting('wc_appsheet_sync_group', 'wc_appsheet_table');
+        register_setting('wc_appsheet_sync_group', 'wc_appsheet_table');
     }
 
     public function renderSettingsPage()
@@ -35,7 +35,7 @@ class SettingsPage
             $options = [
                 'app_id' => get_option('wc_appsheet_app_id', ''),
                 'access_key' => get_option('wc_appsheet_access_key', ''),
-                'table' => 'Orders', // Valor fijo
+                'table' => get_option('wc_appsheet_table', ''),
             ];
             extract($options);
             include $view;  
