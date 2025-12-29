@@ -18,7 +18,10 @@
                 <th scope="row">Table Orders Name</th>
                 <td><input type="text" name="wc_appsheet_table" value="<?php echo esc_attr($table); ?>" size="50" /></td>
             </tr>
-                           
+            <tr valign="top">
+                <th scope="row">Table OrderDetails Name</th>
+                <td><input type="text" name="wc_appsheet_table_order_details" value="<?php echo esc_attr($table_order_details); ?>" size="50" /></td>
+            </tr>            
         </table>
         <?php submit_button(); ?>
     </form>
