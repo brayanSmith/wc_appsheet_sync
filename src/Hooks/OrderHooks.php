@@ -8,8 +8,59 @@ class OrderHooks
 {
     public function __construct()
     {
-        add_action('woocommerce_order_status_completed', [$this, 'syncOrder']);
-        add_action('woocommerce_order_status_completed', [$this, 'syncOrderDetails']);
+        add_action('woocommerce_new_order', [$this, 'scheduleSyncOrder']);
+        add_action('woocommerce_new_order', [$this, 'scheduleSyncOrderDetails']);
+    }
+
+    /**
+     * Programa la sincronización del pedido como tarea asíncrona
+     */
+    public function scheduleSyncOrder($orderId)
+    {
+        if (function_exists('as_enqueue_async_action')) {
+            as_enqueue_async_action('wc_appsheet_sync_order', ['order_id' => $orderId]);
+        } else {
+            $this->syncOrder($orderId);
+        }
+    }
+
+    /**
+     * Programa la sincronización de los detalles del pedido como tarea asíncrona
+     */
+    public function scheduleSyncOrderDetails($orderId)
+    {
+        if (function_exists('as_enqueue_async_action')) {
+            as_enqueue_async_action('wc_appsheet_sync_order_details', ['order_id' => $orderId]);
+        } else {
+            $this->syncOrderDetails($orderId);
+        }
+    }
+
+    /**
+     * Acción para procesar la sincronización del pedido
+     */
+    public static function actionSyncOrder($orderId)
+    {
+        $instance = new self();
+        $instance->syncOrder($orderId);
+    }
+
+    /**
+     * Acción para procesar la sincronización de los detalles del pedido
+     */
+    public static function actionSyncOrderDetails($orderId)
+    {
+        $instance = new self();
+        $instance->syncOrderDetails($orderId);
+    }
+
+    /**
+     * Registrar los hooks de Action Scheduler
+     */
+    public static function registerActionSchedulerHooks()
+    {
+        add_action('wc_appsheet_sync_order', [self::class, 'actionSyncOrder'], 10, 1);
+        add_action('wc_appsheet_sync_order_details', [self::class, 'actionSyncOrderDetails'], 10, 1);
     }
 
     public function syncOrder($orderId)
