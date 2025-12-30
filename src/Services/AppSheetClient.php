@@ -21,7 +21,7 @@ class AppSheetClient
         ]);
     }
 
-    public function sendOrder(array $data, string $table = 'Orders')
+    public function sendData(array $data, string $table = 'Orders')
     {
         return $this->cliente->post("tables/{$table}/Action", [
             'headers' => [
@@ -30,6 +30,42 @@ class AppSheetClient
             ],
             'json' => [
                 'Action' => 'Add',
+                'Properties' => [
+                    'Locale' => 'es-ES',
+                    'Timezone' => 'UTC',
+                ],
+                'Rows' => [$data],
+            ],
+        ]);
+    }
+
+    public function editData(array $data, string $table = 'Orders')
+    {
+        return $this->cliente->post("tables/{$table}/Action", [
+            'headers' => [
+                'ApplicationAccessKey' => $this->accessKey,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'Action' => 'Edit',
+                'Properties' => [
+                    'Locale' => 'es-ES',
+                    'Timezone' => 'UTC',
+                ],
+                'Rows' => [$data],
+            ],
+        ]);
+    }
+
+    public function deleteData(array $data, string $table = 'Orders')
+    {
+        return $this->cliente->post("tables/{$table}/Action", [
+            'headers' => [
+                'ApplicationAccessKey' => $this->accessKey,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => [
+                'Action' => 'Delete',
                 'Properties' => [
                     'Locale' => 'es-ES',
                     'Timezone' => 'UTC',
