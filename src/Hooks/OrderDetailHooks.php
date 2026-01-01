@@ -22,58 +22,58 @@ class OrderDetailHooks
      */
     public function scheduleSyncOrderDetailEdit($item)
     {
-        $item_id = $item->get_id();
-        $order_id = $item->get_order_id();
+        $itemId = $item->get_id();
+        $orderId = $item->get_order_id();
         if (function_exists('as_enqueue_async_action')) {
             as_enqueue_async_action('wc_appsheet_sync_order_detail_edit', [
-                'item_id' => $item_id,
-                'order_id' => $order_id
+                'item_id' => $itemId,
+                'order_id' => $orderId
             ]);
         } else {
-            $this->syncOrderDetailEdit($item_id, $order_id);
+            $this->syncOrderDetailEdit($itemId, $orderId);
         }
     }
 
     /**
      * Acción para procesar la sincronización de la edición del detalle del pedido
      */
-    public static function actionSyncOrderDetailEdit($item_id, $order_id)
+    public static function actionSyncOrderDetailEdit($itemId, $orderId)
     {
         $instance = new self();
-        $instance->syncOrderDetailEdit($item_id, $order_id);
+        $instance->syncOrderDetailEdit($itemId, $orderId);
     }
 
     /**
      * Programa la sincronización del detalle del pedido como tarea asíncrona
      */
-    public function scheduleSyncOrderDetail($item_id, $item, $order_id)
+    public function scheduleSyncOrderDetail($itemId, $item, $orderId)
     {
         if (function_exists('as_enqueue_async_action')) {
             as_enqueue_async_action('wc_appsheet_sync_order_detail', [
-                'item_id' => $item_id,
-                'order_id' => $order_id
+                'item_id' => $itemId,
+                'order_id' => $orderId
             ]);
         } else {
-            $this->syncOrderDetail($item_id, $order_id);
+            $this->syncOrderDetail($itemId, $orderId);
         }
     }
 
     /**
      * Acción para procesar la sincronización del detalle del pedido
      */
-    public static function actionSyncOrderDetail($item_id, $order_id)
+    public static function actionSyncOrderDetail($itemId, $orderId)
     {
         $instance = new self();
-        $instance->syncOrderDetail($item_id, $order_id);
+        $instance->syncOrderDetail($itemId, $orderId);
     }
 
     /**
      * Acción para procesar la sincronización de la eliminación del detalle del pedido
      */
-    public static function actionSyncOrderDetailDelete($item_id, $order_id)
+    public static function actionSyncOrderDetailDelete($itemId, $orderId)
     {
         $instance = new self();
-        $instance->syncOrderDetailDelete($item_id, $order_id);
+        $instance->syncOrderDetailDelete($itemId, $orderId);
     }
 
     /**
@@ -89,50 +89,50 @@ class OrderDetailHooks
     /**
      * Sincroniza la edición del detalle del pedido con AppSheet
      */
-    public function syncOrderDetailEdit($item_id, $order_id)
+    public function syncOrderDetailEdit($itemId, $orderId)
     {
-        $order = wc_get_order($order_id);
+        $order = wc_get_order($orderId);
         if (!$order) return;
-        $item = $order->get_item($item_id);
+        $item = $order->get_item($itemId);
         if (!$item || !$item instanceof \WC_Order_Item_Product) return;
         $producto = $item->get_product();
         $cliente = new AppSheetClient();
         $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
         $cliente->editData([
             'id' => $item->get_id(),
-            'OrderID' => $order->get_id(),
-            'ProductID' => $producto ? $producto->get_id() : 0,
-            'ProductName' => $item->get_name(),
-            'Quantity' => $item->get_quantity(),
-            'Total' => $item->get_total(),
+            'order_id' => $order->get_id(),
+            'product_id' => $producto ? $producto->get_id() : 0,
+            'product_name' => $item->get_name(),
+            'quantity' => $item->get_quantity(),
+            'total' => $item->get_total(),
         ], $table_order_details);
     }
 
-    public function syncOrderDetail($item_id, $order_id)
+    public function syncOrderDetail($itemId, $orderId)
     {
-        $order = wc_get_order($order_id);
+        $order = wc_get_order($orderId);
         if (!$order) return;
-        $item = $order->get_item($item_id);
+        $item = $order->get_item($itemId);
         if (!$item || !$item instanceof \WC_Order_Item_Product) return;
         $producto = $item->get_product();
         $cliente = new AppSheetClient();
         $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
         $cliente->sendData([
             'id' => $item->get_id(),
-            'OrderID' => $order->get_id(),
-            'ProductID' => $producto ? $producto->get_id() : 0,
-            'ProductName' => $item->get_name(),
-            'Quantity' => $item->get_quantity(),
-            'Total' => $item->get_total(),
+            'order_id' => $order->get_id(),
+            'product_id' => $producto ? $producto->get_id() : 0,
+            'product_name' => $item->get_name(),
+            'quantity' => $item->get_quantity(),
+            'total' => $item->get_total(),
         ], $table_order_details);
     }
 
-    public function syncOrderDetailDelete($item_id)
+    public function syncOrderDetailDelete($itemId)
     {
-        $item = new \WC_Order_Item_Product($item_id);
-        $order_id = $item->get_order_id();
-        $order = $order_id ? wc_get_order($order_id) : null;
-        $item = ($order) ? $order->get_item($item_id) : null;
+        $item = new \WC_Order_Item_Product($itemId);
+        $orderId = $item->get_order_id();
+        $order = $orderId ? wc_get_order($orderId) : null;
+        $item = ($order) ? $order->get_item($itemId) : null;
         if (!$item || !$item instanceof \WC_Order_Item_Product) return;
         $cliente = new AppSheetClient();
         $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');

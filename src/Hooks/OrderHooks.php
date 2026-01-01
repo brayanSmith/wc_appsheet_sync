@@ -85,11 +85,11 @@ class OrderHooks
         $cliente = new AppSheetClient();
 
         $cliente->sendData([
-            'OrderID' => $order->get_id(),
-            'CustomerName' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-            'Total' => $order->get_total(),
-            'Status' => $order->get_status(),
-            'DateCreated' => $order->get_date_created()->date('Y-m-d H:i:s'),
+            'id' => $order->get_id(),
+            'customer_name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+            'total' => $order->get_total(),
+            'status' => $order->get_status(),
+            'date_created' => $order->get_date_created()->date('Y-m-d H:i:s'),
         ]);
     }
 
@@ -102,11 +102,11 @@ class OrderHooks
         if (!$order) return;
         $cliente = new AppSheetClient();
         $cliente->editData([
-            'OrderID' => $order->get_id(),
-            'CustomerName' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-            'Total' => $order->get_total(),
-            'Status' => $order->get_status(),
-            'DateCreated' => $order->get_date_created()->date('Y-m-d H:i:s'),
+            'id' => $order->get_id(),
+            'customer_name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+            'total' => $order->get_total(),
+            'status' => $order->get_status(),
+            'date_created' => $order->get_date_created()->date('Y-m-d H:i:s'),
         ]);
     }
 
@@ -119,7 +119,7 @@ class OrderHooks
         if (!$order) return;
         $cliente = new AppSheetClient();
         $cliente->deleteData([
-            'OrderID' => $order->get_id(),
+            'id' => $order->get_id(),
         ]);
     }
     
