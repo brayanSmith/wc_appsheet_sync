@@ -26,25 +26,8 @@ OrderDetailHooks::registerActionSchedulerHooks();
 
 // Cargar la clase de la página de configuración si no existe
 if (is_admin()) {
-		// Endpoint para descargar la plantilla Excel
-		add_action('admin_init', function() {
-			if (isset($_GET['wc_appsheet_download_template']) && current_user_can('manage_options')) {
-				$file = plugin_dir_path(__FILE__) . 'assets/excelTemplates/PlantillaAppsheetWoocommerce.xlsx';
-				if (file_exists($file)) {
-					header('Content-Description: File Transfer');
-					header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-					header('Content-Disposition: attachment; filename="PlantillaAppsheetWoocommerce.xlsx"');
-					header('Expires: 0');
-					header('Cache-Control: must-revalidate');
-					header('Pragma: public');
-					header('Content-Length: ' . filesize($file));
-					readfile($file);
-					exit;
-				} else {
-					wp_die('Archivo no encontrado.');
-				}
-			}
-		});
+		// Incluir el hook de descarga de plantilla Excel
+		require_once __DIR__ . '/src/Hooks/DownloadTemplateHook.php';
 	require_once __DIR__ . '/src/Admin/SettingsPage.php';
 	new \WcAppSheet\Admin\SettingsPage();
 
