@@ -4,141 +4,103 @@ namespace WcAppSheet\Hooks;
 
 use WcAppSheet\Services\AppSheetClient;
 
-class OrderDetailHooks
+class OrderDetailHooks    
+   
 {
     public function __construct()
     {
-        // Se ejecuta cuando se añade o actualiza un ítem en el pedido
-        add_action('woocommerce_order_item_added', [$this, 'scheduleSyncOrderDetail'], 10, 3);
-        add_action('woocommerce_update_order_item', [$this, 'scheduleSyncOrderDetail'], 10, 3);
-        // Se ejecuta cuando se edita un ítem en el pedido
-        add_action('woocommerce_before_save_order_item', [$this, 'scheduleSyncOrderDetailEdit'], 10, 1);
-        // Se ejecuta cuando se elimina un ítem del pedido
-        add_action('woocommerce_before_delete_order_item', [$this, 'syncOrderDetailDelete'], 10, 1);
-    }
+        // Ejecutar automáticamente la eliminación múltiple si WooCommerce elimina varios ítems
+        add_action('woocommerce_before_delete_order_items', [$this, 'handleMultipleDelete'], 10, 1);
+        // Ejecutar también para eliminación individual
+        add_action('woocommerce_before_delete_order_item', [$this, 'handleSingleDelete'], 10, 1);
+        // Ejecutar para adición individual
+        add_action('woocommerce_new_order_item', [$this, 'handleSingleAdd'], 10, 1);
+        // Ejecutar para adición múltiple
+        add_action('woocommerce_new_order_items', [$this, 'handleMultipleAdd'], 10, 1);
+    }    
 
     /**
-     * Programa la sincronización de la edición del detalle del pedido como tarea asíncrona
+     * Handler para el hook de eliminación individual de WooCommerce
+     * @param int $itemId
      */
-    public function scheduleSyncOrderDetailEdit($item)
+    public function handleSingleDelete($itemId)
     {
-        $itemId = $item->get_id();
-        $orderId = $item->get_order_id();
-        if (function_exists('as_enqueue_async_action')) {
-            as_enqueue_async_action('wc_appsheet_sync_order_detail_edit', [
-                'item_id' => $itemId,
-                'order_id' => $orderId
-            ]);
-        } else {
-            $this->syncOrderDetailEdit($itemId, $orderId);
+        if (!empty($itemId)) {
+            $this->syncMultipleOrderDetails([$itemId], 'delete');
         }
     }
 
     /**
-     * Acción para procesar la sincronización de la edición del detalle del pedido
+     * Handler para el hook de eliminación múltiple de WooCommerce
+     * @param array $itemIds
      */
-    public static function actionSyncOrderDetailEdit($itemId, $orderId)
+    public function handleMultipleDelete($itemIds)
     {
-        $instance = new self();
-        $instance->syncOrderDetailEdit($itemId, $orderId);
+        if (is_array($itemIds) && !empty($itemIds)) {
+            $this->syncMultipleOrderDetails($itemIds, 'delete');
+        }
+    }
+    
+    public function handleSingleAdd($itemId)
+    {
+        if (!empty($itemId)) {
+            $this->syncMultipleOrderDetails([$itemId], 'add');
+        }
     }
 
-    /**
-     * Programa la sincronización del detalle del pedido como tarea asíncrona
-     */
-    public function scheduleSyncOrderDetail($itemId, $item, $orderId)
+    public function handleMultipleAdd($itemIds)
     {
-        if (function_exists('as_enqueue_async_action')) {
-            as_enqueue_async_action('wc_appsheet_sync_order_detail', [
-                'item_id' => $itemId,
-                'order_id' => $orderId
-            ]);
-        } else {
-            $this->syncOrderDetail($itemId, $orderId);
+        if (is_array($itemIds) && !empty($itemIds)) {
+            $this->syncMultipleOrderDetails($itemIds, 'add');
         }
     }
 
     /**
-     * Acción para procesar la sincronización del detalle del pedido
+     * Sincroniza (agrega o elimina) varios detalles de orden y actualiza el total si corresponde
+     * @param array $itemIds
+     * @param string $action 'add' para agregar, 'delete' para eliminar
      */
-    public static function actionSyncOrderDetail($itemId, $orderId)
+    public function syncMultipleOrderDetails(array $itemIds, string $action = 'delete')
     {
-        $instance = new self();
-        $instance->syncOrderDetail($itemId, $orderId);
-    }
-
-    /**
-     * Acción para procesar la sincronización de la eliminación del detalle del pedido
-     */
-    public static function actionSyncOrderDetailDelete($itemId, $orderId)
-    {
-        $instance = new self();
-        $instance->syncOrderDetailDelete($itemId, $orderId);
-    }
-
-    /**
-     * Registrar el hook de Action Scheduler
-     */
-    public static function registerActionSchedulerHooks()
-    {
-        add_action('wc_appsheet_sync_order_detail', [self::class, 'actionSyncOrderDetail'], 10, 2);
-        add_action('wc_appsheet_sync_order_detail_edit', [self::class, 'actionSyncOrderDetailEdit'], 10, 2);
-        add_action('wc_appsheet_sync_order_detail_delete', [self::class, 'actionSyncOrderDetailDelete'], 10, 2);
-    }
-
-    /**
-     * Sincroniza la edición del detalle del pedido con AppSheet
-     */
-    public function syncOrderDetailEdit($itemId, $orderId)
-    {
-        $order = wc_get_order($orderId);
-        if (!$order) return;
-        $item = $order->get_item($itemId);
-        if (!$item || !$item instanceof \WC_Order_Item_Product) return;
-        $producto = $item->get_product();
-        $cliente = new AppSheetClient();
-        $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
-        $cliente->editData([
-            'id' => $item->get_id(),
-            'order_id' => $order->get_id(),
-            'product_id' => $producto ? $producto->get_id() : 0,
-            'product_name' => $item->get_name(),
-            'quantity' => $item->get_quantity(),
-            'total' => $item->get_total(),
-        ], $table_order_details);
-    }
-
-    public function syncOrderDetail($itemId, $orderId)
-    {
-        $order = wc_get_order($orderId);
-        if (!$order) return;
-        $item = $order->get_item($itemId);
-        if (!$item || !$item instanceof \WC_Order_Item_Product) return;
-        $producto = $item->get_product();
-        $cliente = new AppSheetClient();
-        $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
-        $cliente->sendData([
-            'id' => $item->get_id(),
-            'order_id' => $order->get_id(),
-            'product_id' => $producto ? $producto->get_id() : 0,
-            'product_name' => $item->get_name(),
-            'quantity' => $item->get_quantity(),
-            'total' => $item->get_total(),
-        ], $table_order_details);
-    }
-
-    public function syncOrderDetailDelete($itemId)
-    {
-        $item = new \WC_Order_Item_Product($itemId);
-        $orderId = $item->get_order_id();
-        $order = $orderId ? wc_get_order($orderId) : null;
-        $item = ($order) ? $order->get_item($itemId) : null;
-        if (!$item || !$item instanceof \WC_Order_Item_Product) return;
-        $cliente = new AppSheetClient();
-        $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
-        $cliente->deleteData([
-            'id' => $item->get_id(),
-        ], $table_order_details);
+        if (empty($itemIds)) return;
+        $items = [];
+        $orderId = null;
+        foreach ($itemIds as $itemId) {
+            $item = new \WC_Order_Item_Product($itemId);
+            $orderId = $item->get_order_id();
+            $producto = $item->get_product();
+            $items[] = [
+                'id' => $item->get_id(),
+                'order_id' => $orderId,
+                'product_id' => $producto ? $producto->get_id() : 0,
+                'product_name' => $item->get_name(),
+                'quantity' => $item->get_quantity(),
+                'total' => $item->get_total(),
+            ];
+        }
+        if (!empty($items)) {
+            $cliente = new AppSheetClient();
+            $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
+            if ($action === 'delete') {
+                $cliente->deleteData($items, $table_order_details);
+            } elseif ($action === 'add') {
+                $cliente->sendData($items, $table_order_details);
+            }
+        }
+        // Recalcular y sincronizar el total de la orden si se elimina o agrega detalle
+        if ($orderId && in_array($action, ['delete'])) {
+            $order = wc_get_order($orderId);
+            if ($order) {
+                $cliente = isset($cliente) ? $cliente : new AppSheetClient();
+                $cliente->editData([
+                    'id' => $order->get_id(),
+                    'customer_name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+                    'total' => $order->get_total(),
+                    'status' => $order->get_status(),
+                    'date_created' => $order->get_date_created()->date('Y-m-d H:i:s'),
+                ]);
+            }
+        }
     }
     
 }

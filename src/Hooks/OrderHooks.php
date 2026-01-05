@@ -85,12 +85,54 @@ class OrderHooks
         $cliente = new AppSheetClient();
 
         $cliente->sendData([
+            //datos del customer
             'id' => $order->get_id(),
             'customer_name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+            'address_1' => $order->get_billing_address_1(),
+            'address_2' => $order->get_billing_address_2(),
+            'city' => $order->get_billing_city(),
+            'postcode' => $order->get_billing_postcode(),
+            'country' => $order->get_billing_country(),
+            'email' => $order->get_billing_email(),
+            'phone' => $order->get_billing_phone(),
+            //datos del pedido
+            'currency' => $order->get_currency(),
+            'payment_method' => $order->get_payment_method(),
+            'payment_method_title' => $order->get_payment_method_title(),
+            //totales
+            'discount_total' => $order->get_discount_total(),
+            'discount_tax' => $order->get_discount_tax(),
+            'shipping_total' => $order->get_shipping_total(),
+            'shipping_tax' => $order->get_shipping_tax(),
+            'cart_tax' => $order->get_cart_tax(),
             'total' => $order->get_total(),
+            'total_tax' => $order->get_total_tax(),
+            //otros
             'status' => $order->get_status(),
             'date_created' => $order->get_date_created()->date('Y-m-d H:i:s'),
+            'date_modified' => $order->get_date_modified()->date('Y-m-d H:i:s'),
         ]);
+
+        // Enviar todos los detalles de la orden en una sola petición
+        $items = $order->get_items();
+        $detalles = [];
+        foreach ($items as $item) {
+            if ($item instanceof \WC_Order_Item_Product) {
+                $producto = $item->get_product();
+                $detalles[] = [
+                    'id' => $item->get_id(),
+                    'order_id' => $order->get_id(),
+                    'product_id' => $producto ? $producto->get_id() : 0,
+                    'product_name' => $item->get_name(),
+                    'quantity' => $item->get_quantity(),
+                    'total' => $item->get_total(),
+                ];
+            }
+        }
+        if (!empty($detalles)) {
+            $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
+            $cliente->sendData($detalles, $table_order_details);
+        }
     }
 
     /**
@@ -102,12 +144,82 @@ class OrderHooks
         if (!$order) return;
         $cliente = new AppSheetClient();
         $cliente->editData([
+            //datos del customer
             'id' => $order->get_id(),
             'customer_name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+            'address_1' => $order->get_billing_address_1(),
+            'address_2' => $order->get_billing_address_2(),
+            'city' => $order->get_billing_city(),
+            'postcode' => $order->get_billing_postcode(),
+            'country' => $order->get_billing_country(),
+            'email' => $order->get_billing_email(),
+            'phone' => $order->get_billing_phone(),
+            //datos del pedido
+            'currency' => $order->get_currency(),
+            'payment_method' => $order->get_payment_method(),
+            'payment_method_title' => $order->get_payment_method_title(),
+            //totales
+            'discount_total' => $order->get_discount_total(),
+            'discount_tax' => $order->get_discount_tax(),
+            'shipping_total' => $order->get_shipping_total(),
+            'shipping_tax' => $order->get_shipping_tax(),
+            'cart_tax' => $order->get_cart_tax(),
             'total' => $order->get_total(),
+            'total_tax' => $order->get_total_tax(),
+            //otros
             'status' => $order->get_status(),
             'date_created' => $order->get_date_created()->date('Y-m-d H:i:s'),
+            'date_modified' => $order->get_date_modified()->date('Y-m-d H:i:s'),
         ]);
+
+        // Enviar todos los detalles de la orden editados en una sola petición
+        $items = $order->get_items();
+        $detalles_nuevos = [];
+        $detalles_existentes = [];
+        // Aquí deberías tener una forma de saber cuáles detalles ya existen en AppSheet
+        // Por simplicidad, asumiremos que si el id es menor a 1000000 es existente (ajusta esto a tu lógica real)
+        foreach ($items as $item) {
+            if ($item instanceof \WC_Order_Item_Product) {
+                $producto = $item->get_product();
+                $detalle = [
+                    'id' => $item->get_id(),
+                    'order_id' => $order->get_id(),
+                    'product_id' => $producto ? $producto->get_id() : 0,
+                    'product_name' => $item->get_name(),
+                    'quantity' => $item->get_quantity(),
+                    'total' => $item->get_total(),
+                ];
+                // Lógica de ejemplo: si el id es menor a 1000000, es existente
+                if ($item->get_id() < 1000000) {
+                    $detalles_existentes[] = $detalle;
+                } else {
+                    $detalles_nuevos[] = $detalle;
+                }
+            }
+        }
+        $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
+        if (!empty($detalles_existentes)) {
+            $cliente->editData($detalles_existentes, $table_order_details);
+        }
+        if (!empty($detalles_nuevos)) {
+            $cliente->sendData($detalles_nuevos, $table_order_details);
+        }
+
+        // Sincronizar reembolsos (refunds) al editar la orden
+        $refunds = $order->get_refunds();
+        $refunds_data = [];
+        foreach ($refunds as $refund) {
+            $refunds_data[] = [
+                'id' => $refund->get_id(),
+                'order_id' => $order->get_id(),
+                'reason' => $refund->get_reason(),
+                'total' => $refund->get_amount(),
+            ];
+        }
+        if (!empty($refunds_data)) {
+            $table_order_refunds = get_option('wc_appsheet_table_order_refunds', 'order_refunds');
+            $cliente->sendData($refunds_data, $table_order_refunds);
+        }
     }
 
     /**

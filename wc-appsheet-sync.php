@@ -21,8 +21,6 @@ new OrderHooks();
 OrderHooks::registerActionSchedulerHooks();
 
 new OrderDetailHooks();
-OrderDetailHooks::registerActionSchedulerHooks();
-
 
 // Cargar la clase de la página de configuración si no existe
 if (is_admin()) {

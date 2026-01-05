@@ -23,6 +23,8 @@ class AppSheetClient
 
     public function sendData(array $data, string $table = 'Orders')
     {
+        // Si $data es un solo objeto, lo convertimos en array de uno
+        $rows = isset($data[0]) ? $data : [$data];
         return $this->cliente->post("tables/{$table}/Action", [
             'headers' => [
                 'ApplicationAccessKey' => $this->accessKey,
@@ -34,13 +36,15 @@ class AppSheetClient
                     'Locale' => 'es-ES',
                     'Timezone' => 'UTC',
                 ],
-                'Rows' => [$data],
+                'Rows' => $rows,
             ],
         ]);
     }
 
     public function editData(array $data, string $table = 'Orders')
     {
+        // Si $data es un solo objeto, lo convertimos en array de uno
+        $rows = isset($data[0]) ? $data : [$data];
         return $this->cliente->post("tables/{$table}/Action", [
             'headers' => [
                 'ApplicationAccessKey' => $this->accessKey,
@@ -52,13 +56,15 @@ class AppSheetClient
                     'Locale' => 'es-ES',
                     'Timezone' => 'UTC',
                 ],
-                'Rows' => [$data],
+                'Rows' => $rows,
             ],
         ]);
     }
 
     public function deleteData(array $data, string $table = 'Orders')
     {
+        // Si $data es un solo objeto, lo convertimos en array de uno
+        $rows = isset($data[0]) ? $data : [$data];
         return $this->cliente->post("tables/{$table}/Action", [
             'headers' => [
                 'ApplicationAccessKey' => $this->accessKey,
@@ -70,7 +76,7 @@ class AppSheetClient
                     'Locale' => 'es-ES',
                     'Timezone' => 'UTC',
                 ],
-                'Rows' => [$data],
+                'Rows' => $rows,
             ],
         ]);
     }

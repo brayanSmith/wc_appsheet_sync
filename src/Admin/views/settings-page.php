@@ -39,7 +39,7 @@
                                 Descargar Plantilla
                             </a>
                         </td>
-                    </tr>      
+                    </tr>                    
                 </table>            
                 <?php submit_button('Guardar cambios', 'primary'); ?>            
             </form>
