@@ -23,15 +23,7 @@
                     <tr valign="top">
                         <th scope="row">Access Key (Appsheet)</th>
                         <td><input type="text" name="wc_appsheet_access_key" value="<?php echo esc_attr($access_key); ?>" required/></td>
-                    </tr>
-                    <tr valign="top">
-                        <th scope="row">Tabla de Ordenes</th>
-                        <td><input type="text" name="wc_appsheet_table" value="<?php echo esc_attr($table); ?>" required/></td>
-                    </tr>
-                    <tr valign="top">
-                        <th scope="row">Tabla de Detalles de Orden</th>
-                        <td><input type="text" name="wc_appsheet_table_order_details" value="<?php echo esc_attr($table_order_details); ?>" required/></td>
-                    </tr>      
+                    </tr>                    
                     <tr valign="top">
                         <th scope="row">Descargar plantilla Excel</th>
                         <td>

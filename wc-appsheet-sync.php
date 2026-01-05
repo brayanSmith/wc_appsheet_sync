@@ -16,11 +16,14 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use WcAppSheet\Hooks\OrderHooks;
 use WcAppSheet\Hooks\OrderDetailHooks;
+use WcAppSheet\Hooks\ProductHooks;
 
 new OrderHooks();
 OrderHooks::registerActionSchedulerHooks();
 
 new OrderDetailHooks();
+new ProductHooks();
+ProductHooks::registerActionSchedulerHooks();
 
 // Cargar la clase de la página de configuración si no existe
 if (is_admin()) {

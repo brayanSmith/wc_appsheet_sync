@@ -79,13 +79,13 @@ class OrderHooks
     public function syncOrder($orderId)
     {
         $order = wc_get_order($orderId);
-
-        if (!$order) return;
-
+        error_log("[OrderHooks][syncOrder] Iniciando sincronización de orden: $orderId");
+        if (!$order) {
+            error_log("[OrderHooks][syncOrder] Orden no encontrada: $orderId");
+            return;
+        }
         $cliente = new AppSheetClient();
-
-        $cliente->sendData([
-            //datos del customer
+        $data = [
             'id' => $order->get_id(),
             'customer_name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
             'address_1' => $order->get_billing_address_1(),
@@ -95,11 +95,9 @@ class OrderHooks
             'country' => $order->get_billing_country(),
             'email' => $order->get_billing_email(),
             'phone' => $order->get_billing_phone(),
-            //datos del pedido
             'currency' => $order->get_currency(),
             'payment_method' => $order->get_payment_method(),
             'payment_method_title' => $order->get_payment_method_title(),
-            //totales
             'discount_total' => $order->get_discount_total(),
             'discount_tax' => $order->get_discount_tax(),
             'shipping_total' => $order->get_shipping_total(),
@@ -107,13 +105,13 @@ class OrderHooks
             'cart_tax' => $order->get_cart_tax(),
             'total' => $order->get_total(),
             'total_tax' => $order->get_total_tax(),
-            //otros
             'status' => $order->get_status(),
             'date_created' => $order->get_date_created()->date('Y-m-d H:i:s'),
             'date_modified' => $order->get_date_modified()->date('Y-m-d H:i:s'),
-        ]);
+        ];
+        error_log('[OrderHooks][syncOrder] Datos enviados a AppSheet: ' . print_r($data, true));
+        $cliente->sendData($data);
 
-        // Enviar todos los detalles de la orden en una sola petición
         $items = $order->get_items();
         $detalles = [];
         foreach ($items as $item) {
@@ -131,6 +129,7 @@ class OrderHooks
         }
         if (!empty($detalles)) {
             $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
+            error_log('[OrderHooks][syncOrder] Detalles enviados a AppSheet: ' . print_r($detalles, true));
             $cliente->sendData($detalles, $table_order_details);
         }
     }
@@ -141,10 +140,13 @@ class OrderHooks
     public function syncOrderEdit($orderId)
     {
         $order = wc_get_order($orderId);
-        if (!$order) return;
+        error_log("[OrderHooks][syncOrderEdit] Iniciando edición de orden: $orderId");
+        if (!$order) {
+            error_log("[OrderHooks][syncOrderEdit] Orden no encontrada: $orderId");
+            return;
+        }
         $cliente = new AppSheetClient();
-        $cliente->editData([
-            //datos del customer
+        $data = [
             'id' => $order->get_id(),
             'customer_name' => $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
             'address_1' => $order->get_billing_address_1(),
@@ -154,11 +156,9 @@ class OrderHooks
             'country' => $order->get_billing_country(),
             'email' => $order->get_billing_email(),
             'phone' => $order->get_billing_phone(),
-            //datos del pedido
             'currency' => $order->get_currency(),
             'payment_method' => $order->get_payment_method(),
             'payment_method_title' => $order->get_payment_method_title(),
-            //totales
             'discount_total' => $order->get_discount_total(),
             'discount_tax' => $order->get_discount_tax(),
             'shipping_total' => $order->get_shipping_total(),
@@ -166,18 +166,16 @@ class OrderHooks
             'cart_tax' => $order->get_cart_tax(),
             'total' => $order->get_total(),
             'total_tax' => $order->get_total_tax(),
-            //otros
             'status' => $order->get_status(),
             'date_created' => $order->get_date_created()->date('Y-m-d H:i:s'),
             'date_modified' => $order->get_date_modified()->date('Y-m-d H:i:s'),
-        ]);
+        ];
+        error_log('[OrderHooks][syncOrderEdit] Datos enviados a AppSheet: ' . print_r($data, true));
+        $cliente->editData($data);
 
-        // Enviar todos los detalles de la orden editados en una sola petición
         $items = $order->get_items();
         $detalles_nuevos = [];
         $detalles_existentes = [];
-        // Aquí deberías tener una forma de saber cuáles detalles ya existen en AppSheet
-        // Por simplicidad, asumiremos que si el id es menor a 1000000 es existente (ajusta esto a tu lógica real)
         foreach ($items as $item) {
             if ($item instanceof \WC_Order_Item_Product) {
                 $producto = $item->get_product();
@@ -189,7 +187,6 @@ class OrderHooks
                     'quantity' => $item->get_quantity(),
                     'total' => $item->get_total(),
                 ];
-                // Lógica de ejemplo: si el id es menor a 1000000, es existente
                 if ($item->get_id() < 1000000) {
                     $detalles_existentes[] = $detalle;
                 } else {
@@ -199,13 +196,14 @@ class OrderHooks
         }
         $table_order_details = get_option('wc_appsheet_table_order_details', 'order_details');
         if (!empty($detalles_existentes)) {
+            error_log('[OrderHooks][syncOrderEdit] Detalles existentes enviados a AppSheet: ' . print_r($detalles_existentes, true));
             $cliente->editData($detalles_existentes, $table_order_details);
         }
         if (!empty($detalles_nuevos)) {
+            error_log('[OrderHooks][syncOrderEdit] Detalles nuevos enviados a AppSheet: ' . print_r($detalles_nuevos, true));
             $cliente->sendData($detalles_nuevos, $table_order_details);
         }
 
-        // Sincronizar reembolsos (refunds) al editar la orden
         $refunds = $order->get_refunds();
         $refunds_data = [];
         foreach ($refunds as $refund) {
@@ -218,6 +216,7 @@ class OrderHooks
         }
         if (!empty($refunds_data)) {
             $table_order_refunds = get_option('wc_appsheet_table_order_refunds', 'order_refunds');
+            error_log('[OrderHooks][syncOrderEdit] Reembolsos enviados a AppSheet: ' . print_r($refunds_data, true));
             $cliente->sendData($refunds_data, $table_order_refunds);
         }
     }
@@ -228,11 +227,17 @@ class OrderHooks
     public function syncOrderDelete($orderId)
     {
         $order = wc_get_order($orderId);
-        if (!$order) return;
+        error_log("[OrderHooks][syncOrderDelete] Eliminando orden: $orderId");
+        if (!$order) {
+            error_log("[OrderHooks][syncOrderDelete] Orden no encontrada: $orderId");
+            return;
+        }
         $cliente = new AppSheetClient();
-        $cliente->deleteData([
+        $data = [
             'id' => $order->get_id(),
-        ]);
+        ];
+        error_log('[OrderHooks][syncOrderDelete] Datos enviados a AppSheet: ' . print_r($data, true));
+        $cliente->deleteData($data);
     }
     
 }
